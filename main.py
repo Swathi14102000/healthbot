@@ -1,29 +1,76 @@
-import mysql.connector
+from fastapi import FastAPI, HTTPException, Depends, status
+from pydantic import BaseModel
+from typing import Annotated
+import models
+from database import engine, SessionLocal
+from sqlalchemy.orm import Session
 
-mydb = mysql.connector.connect(
-    host="localhost",
-    port=3306, # your port number 
-    user="root",
-    password="" , # your password
-    # database = "chatbot"  after creating your database name
-)
-mycursor = mydb.cursor()
-mycursor.execute("CREATE DATABASE chatbot ")
-mycursor.execute("""CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE,
-    email VARCHAR(100),
-    password_hash VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
+app = FastAPI()
 
-sqlFormula = "INSERT INTO users(id, username,email,password_hash,created_at) VALUES(%s,%s,%s,%s,%s)"
-users = [("1","swathi","swathi@gmail.com","swathi@123"),
-         ("2","anu","anu@gmail.com","anu@001"),
-         ("3","joe","joe@gmail.com","joe90"),
-         ("4","arav","arav@gmail.com","arav@123"),
-         ("5","jay","jay@gmail.com","pass@123"),
-         ("6","yuvi","yuvi@gmail.com","yuvi009"),
-         ("7","karthika","karthika@gmail.com","karthika08"),]
-mycursor.executemany(sqlFormula,users)
-mydb.commit()
+# Create all tables
+models.Base.metadata.create_all(bind=engine)
 
+# Pydantic schemas
+class PostBase(BaseModel):
+    title: str
+    content: str
+    user_id: int
+
+class UserBase(BaseModel):
+    id: int
+    username: str
+    email: str
+    password_hash: str
+
+# Dependency for DB session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+db_dependency = Annotated[Session, Depends(get_db)]
+
+# Create a post
+@app.post("/post/", status_code=status.HTTP_201_CREATED)
+async def create_post(post: PostBase, db: db_dependency):
+    db_post = models.Post(**post.dict())
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+# Read a post
+@app.get("/post/{post_id}", status_code=status.HTTP_200_OK)
+async def read_post(post_id: int, db: db_dependency):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail='Post was not found')
+    return post
+
+@app.delete("/post/{post_id}", status_code=status.HTTP_200_OK)
+async def delete_post(post_id: int, db: db_dependency):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail='Post was not found')
+    db.delete(db_post)
+    db.commit()
+    return {"message": "Post deleted successfully"}
+
+# Create a user
+@app.post("/users/", status_code=status.HTTP_201_CREATED)
+async def create_user(user: UserBase, db: db_dependency):
+    db_user = models.User(**user.dict())
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+# Read a user
+@app.get("/users/{user_id}", status_code=status.HTTP_200_OK)
+async def read_user(user_id: int, db: db_dependency):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail='User not found')
+    return user
