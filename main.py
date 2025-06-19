@@ -11,10 +11,6 @@ app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
 
 # Pydantic schemas
-class PostBase(BaseModel):
-    title: str
-    content: str
-    user_id: int
 
 class UserBase(BaseModel):
     id: int
@@ -41,22 +37,6 @@ async def create_post(post: PostBase, db: db_dependency):
     db.refresh(db_post)
     return db_post
 
-# Read a post
-@app.get("/post/{post_id}", status_code=status.HTTP_200_OK)
-async def read_post(post_id: int, db: db_dependency):
-    post = db.query(models.Post).filter(models.Post.id == post_id).first()
-    if post is None:
-        raise HTTPException(status_code=404, detail='Post was not found')
-    return post
-
-@app.delete("/post/{post_id}", status_code=status.HTTP_200_OK)
-async def delete_post(post_id: int, db: db_dependency):
-    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
-    if db_post is None:
-        raise HTTPException(status_code=404, detail='Post was not found')
-    db.delete(db_post)
-    db.commit()
-    return {"message": "Post deleted successfully"}
 
 # Create a user
 @app.post("/users/", status_code=status.HTTP_201_CREATED)
