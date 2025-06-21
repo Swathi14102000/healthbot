@@ -4,10 +4,13 @@ import models, schemas
 from database import engine, SessionLocal
 from typing import Annotated
 from pydantic import BaseModel
+<<<<<<< HEAD
 
 
 
 
+=======
+>>>>>>> b206832143eb01fced36ad857185ec69e8b0f9ea
 
 app = FastAPI()
 
