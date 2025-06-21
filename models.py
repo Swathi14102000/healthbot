@@ -9,9 +9,3 @@ class User(Base):
     email = Column(String(100), unique=True, nullable=False)
     password_hash = Column(String(255))
     
-class Post(Base):
-    __tablename__ = 'post'
-    id = Column(Integer,primary_key = True , index = True)
-    title = Column(String(50))
-    content = Column(String(100))
-    user_id = Column(Integer)
