@@ -13,7 +13,7 @@ app = FastAPI()
 # Automatically create all tables defined in models using the engine
 models.Base.metadata.create_all(bind=engine)
 
-# ✅ Dependency function to get a DB session and handle DB connection issues
+#  Dependency function to get a DB session and handle DB connection issues
 def get_db():
     try:
         db = SessionLocal()       # Create a new database session
@@ -29,10 +29,10 @@ def get_db():
         except:
             pass                  # Ignore errors during session close (e.g., if db was never opened)
 
-# ✅ Typed dependency for DB session used in routes (cleaner syntax)
+#  Typed dependency for DB session used in routes (cleaner syntax)
 db_dependency = Annotated[Session, Depends(get_db)]
 
-# ✅ API: User Registration
+#  API: User Registration
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     try:
@@ -61,8 +61,8 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     except SQLAlchemyError as e:  # Catch any general SQLAlchemy DB error
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-# ✅ API: Login User
-@app.post("/login")
+#  API: Login User
+@app.post("/login" ,status_code=status.HTTP_201_CREATED)
 def login(user: schemas.LoginUser, db: Session = Depends(get_db)):
     try:
         # Look up the user by username
