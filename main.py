@@ -82,34 +82,3 @@ def login(user: schemas.LoginUser, db: Session = Depends(get_db)):
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-# ✅ API: Admin or Backend – Create a new user (same schema)
-@app.post("/createuser/", status_code=status.HTTP_201_CREATED)
-async def create_user(user: schemas.UserCreate, db: db_dependency):
-    try:
-        # Create a new User instance using dict unpacking
-        db_user = models.User(**user.dict())
-
-        db.add(db_user)      # Add to DB session
-        db.commit()          # Commit to save
-        db.refresh(db_user)  # Refresh to get ID or default values
-
-        return {"message": "User created", "user_id": db_user.id}
-    
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-
-# ✅ API: Get a user by ID
-@app.get("/getuser/{user_id}", status_code=status.HTTP_200_OK)
-async def read_user(user_id: int, db: db_dependency):
-    try:
-        # Look for the user with the given ID
-        user = db.query(models.User).filter(models.User.id == user_id).first()
-        
-        # If user doesn't exist, return 404 error
-        if user is None:
-            raise HTTPException(status_code=404, detail='User not found')
-        
-        return user  # Return user object directly (FastAPI will serialize it)
-
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
