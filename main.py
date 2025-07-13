@@ -1,84 +1,120 @@
-# Import necessary modules from FastAPI and SQLAlchemy
 from fastapi import FastAPI, HTTPException, Depends, status
-from sqlalchemy.orm import Session                     # SQLAlchemy session class for DB operations
-from sqlalchemy.exc import OperationalError, SQLAlchemyError  # Specific exceptions for DB errors
-import models, schemas                                  # Your own model and schema Python files
-from database import engine, SessionLocal               # DB engine and session factory from your database setup
-from typing import Annotated                            # For type-safe dependency injection (Python 3.9+)
-import hashlib                                           # Used for hashing passwords securely
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from typing import Annotated, List
+from fuzzywuzzy import fuzz
+from sqlalchemy import or_
+import hashlib
+from fastapi import Depends
 
-# Create FastAPI app instance
+import models, schemas
+from database import engine, SessionLocal
+
 app = FastAPI()
 
-# Automatically create all tables defined in models using the engine
+# Create tables
 models.Base.metadata.create_all(bind=engine)
 
-#  Dependency function to get a DB session and handle DB connection issues
+# Dependency to get DB session
 def get_db():
     try:
-        db = SessionLocal()       # Create a new database session
-        yield db                  # Yield the session to the path operation
-    except OperationalError:      # Catch database connection errors (e.g., DB server down)
-        raise HTTPException(
-            status_code=503,
-            detail="Database is currently unavailable. Please try again later."
-        )
+        db = SessionLocal()
+        yield db
+    except OperationalError:
+        raise HTTPException(status_code=503, detail="Database is unavailable")
     finally:
-        try:
-            db.close()            # Ensure the session is closed even if an error occurs
-        except:
-            pass                  # Ignore errors during session close (e.g., if db was never opened)
+        db.close()
 
-#  Typed dependency for DB session used in routes (cleaner syntax)
 db_dependency = Annotated[Session, Depends(get_db)]
 
-#  API: User Registration
+# Register user
 @app.post("/register", status_code=status.HTTP_201_CREATED)
-def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+def register_user(user: schemas.UserCreate, db: db_dependency):
+    existing_user = db.query(models.User).filter(
+        or_(models.User.username == user.username, models.User.email == user.email)
+    ).first()
+
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this username or email already exists")
+
+    hashed_password = hashlib.sha256(user.password.encode()).hexdigest()
+
+    new_user = models.User(
+        username=user.username,
+        email=user.email,
+        password=hashed_password
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {"message": "Successfully registered", "user_id": new_user.id}
+
+# Login user
+@app.post("/login", status_code=status.HTTP_200_OK)
+def login(user: schemas.LoginUser, db: db_dependency):
+    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+
+    if not db_user:
+        raise HTTPException(status_code=400, detail="Username not found")
+
+    hashed_input_password = hashlib.sha256(user.password.encode()).hexdigest()
+
+    if db_user.password != hashed_input_password:
+        raise HTTPException(status_code=400, detail="Incorrect password")
+
+    return {"message": "Login successful"}
+
+# Bulk insert recipes
+@app.post("/recipes", status_code=status.HTTP_201_CREATED)
+def create_bulk_recipes(recipes: List[schemas.RecipeCreate], db: db_dependency):
+    if not recipes:
+        raise HTTPException(status_code=400, detail="Recipe list cannot be empty")
+
+    inserted = []
+    for recipe in recipes:
+        if db.query(models.Recipe).filter(models.Recipe.title == recipe.title).first():
+            continue
+        new_recipe = models.Recipe(**recipe.dict())
+        db.add(new_recipe)
+        inserted.append(new_recipe)
+
     try:
-        # Check if the username already exists in the DB
-        if db.query(models.User).filter(models.User.username == user.username).first():
-            raise HTTPException(status_code=400, detail="Username already exists")
-
-        # Check if the email is already registered
-        if db.query(models.User).filter(models.User.email == user.email).first():
-            raise HTTPException(status_code=400, detail="Email is already registered")
-
-        # Create a new User model instance with provided details
-        new_user = models.User(
-            username=user.username,
-            email=user.email,
-            password_hash=user.password_hash  # Make sure this is hashed before reaching this point
-        )
-
-        # Add and commit the new user to the DB
-        db.add(new_user)
         db.commit()
-        db.refresh(new_user)  # Refresh instance to get generated fields (like ID)
-
-        return {"message": "Successfully registered", "user_id": new_user.id}
-    
-    except SQLAlchemyError as e:  # Catch any general SQLAlchemy DB error
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-
-#  API: Login User
-@app.post("/login" ,status_code=status.HTTP_201_CREATED)
-def login(user: schemas.LoginUser, db: Session = Depends(get_db)):
-    try:
-        # Look up the user by username
-        db_user = db.query(models.User).filter(models.User.username == user.username).first()
-        if not db_user:
-            raise HTTPException(status_code=400, detail="Username not found")
-        
-        # Hash the entered password for secure comparison
-        hashed_input_password = hashlib.sha256(user.password.encode()).hexdigest()
-
-        # Compare the stored hashed password with the entered one
-        if db_user.password_hash != hashed_input_password:
-            raise HTTPException(status_code=400, detail="Incorrect password")
-
-        return {"message": "Login successful!"}
-    
+        for r in inserted:
+            db.refresh(r)
     except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to insert recipes: {str(e)}")
 
+    return {"message": f"{len(inserted)} recipe(s) successfully inserted"}
+
+# Search recipes using fuzzy logic
+@app.get("/search", status_code=status.HTTP_200_OK)
+def search_recipe(query: str = "", db: db_dependency = Depends() ):
+    if not query.strip():
+        raise HTTPException(status_code=400, detail="Search query cannot be empty")
+
+    try:
+        all_recipes = db.query(models.Recipe).all()
+        matched = []
+
+        for recipe in all_recipes:
+            score = fuzz.partial_ratio(query.lower(), recipe.title.lower())
+            if score >= 60:
+                matched.append({
+                    "id": recipe.id,
+                    "title": recipe.title.title(),
+                    "ingredients": recipe.ingredients,
+                    "instruction": recipe.instruction,
+                    "calories": recipe.calories
+                })
+
+        return {
+            "count": len(matched),
+            "results": matched
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

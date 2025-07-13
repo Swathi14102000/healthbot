@@ -1,6 +1,10 @@
 from sqlalchemy import create_engine # Used to create a connection to the database
 from sqlalchemy.ext.declarative import declarative_base # sessionmaker: for DB sessions, declarative_base: for model base class
+<<<<<<< Updated upstream
 from sqlalchemy.orm import sessionmaker
+=======
+from sqlalchemy.orm import scoped_session, sessionmaker
+>>>>>>> Stashed changes
 # Define the database URL in SQLAlchemy format
 # Format: dialect+driver://username:password@host:port/database_name
 DATABASE_URL = "mysql+pymysql://root:root@localhost:3306/chatbot"
@@ -8,5 +12,9 @@ DATABASE_URL = "mysql+pymysql://root:root@localhost:3306/chatbot"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 #  Create a Base class for models
+<<<<<<< Updated upstream
 Base = declarative_base()
 
+=======
+Base = declarative_base()
+>>>>>>> Stashed changes
