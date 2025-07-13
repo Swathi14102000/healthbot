@@ -1,6 +1,6 @@
 Features
 
-- Search healthy recipes with keyword matching
+- Search  recipes with keyword matching
 -  User registration & login
 -  Caching-enabled search (fast results)
 -  Search history for registered users
