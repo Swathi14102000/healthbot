@@ -7,6 +7,7 @@ Features
 -  Guest search with daily limit
 -  Beautiful UI with sidebar history display
 
+
 Requirements
 - Flask
 - FASTAPI
@@ -17,13 +18,16 @@ Requirements
 
 
 
-libraries to install
+ libraries to install
+- python -m venv venv
+  venv\Scripts\activate
+
 - pip install Flask SQLAlchemy mysql-connector-python Werkzeug
 - pip install fastapi uvicorn (to run uvicorn main:app --reload)
 - pip install flask
 - pip install fuzzywuzzy
-- after installation in your terminal to run the code python app.py
-it shows web link copy paste to run the search engine
+- After installation, in your terminal, run the code **python app.py**
+   It shows a link to copy and paste to run the search engine
 
 
 
@@ -31,6 +35,7 @@ Tech Stack
 
 - **Python 3.10+**
 - **Flask**
+- **FastAPI**
 - **SQLAlchemy** (ORM)
 - **MySQL** (or SQLite for dev)
 - **HTML/CSS**
