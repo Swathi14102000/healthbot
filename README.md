@@ -15,6 +15,11 @@ Requirements
 - PyMySQL
 - fuzzywuzzy
 
+libraries to install
+- pip install Flask SQLAlchemy mysql-connector-python Werkzeug
+- pip install fastapi uvicorn (to run uvicorn main:app --reload)
+- pip install flask
+- pip install fuzzywuzzy
 
 
 Tech Stack
