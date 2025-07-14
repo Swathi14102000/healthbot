@@ -1,107 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Register - HealthBot</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/static/style.css">
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f7f7f7;
-            margin: 0;
-            padding: 0;
-        }
+{% extends 'partials/base.html' %}
 
-        .container {
-            max-width: 400px;
-            margin: 60px auto;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px #ccc;
-        }
+{% block title %}Search History - HealthBot{% endblock %}
 
-        h2 {
-            text-align: center;
-            color: #6b1e8b;
-            margin-bottom: 25px;
-        }
+{% block extra_style %}
+<style>
+    .container {
+        max-width: 800px;
+        margin: auto;
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+        text-align: center;
+        color: #2a5d84;
+    }
+    .history-item {
+        border-bottom: 1px solid #ccc;
+        padding: 15px 0;
+    }
+    .query {
+        font-weight: bold;
+        color: #333;
+    }
+    .timestamp {
+        font-size: 0.9em;
+        color: #777;
+    }
+    .result {
+        margin-top: 5px;
+        color: #444;
+    }
+    .no-history {
+        text-align: center;
+        color: #999;
+        font-size: 1.1em;
+        margin-top: 50px;
+    }
+</style>
+{% endblock %}
 
-        form input[type="text"],
-        form input[type="email"],
-        form input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
-
-        form button {
-            width: 100%;
-            padding: 10px;
-            background-color: #6b1e8b;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        form button:hover {
-            background-color: #5a1978;
-        }
-
-        .flash-message {
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            text-align: center;
-        }
-
-        .flash-message.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .flash-message.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .login-link {
-            text-align: center;
-            margin-top: 15px;
-        }
-    </style>
-</head>
-<body>
-
+{% block content %}
 <div class="container">
-    <h2>Create Your Account</h2>
+    <h2>🕓 Recent Search History</h2>
 
-    <!-- Flash message block -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="flash-message {{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+    {% if history %}
+        {% for item in history %}
+            <div class="history-item">
+                <div class="query">🔍 {{ item.query }}</div>
+                <div class="timestamp">{{ item.timestamp.strftime('%Y-%m-%d %H:%M:%S') if item.timestamp else 'N/A' }}</div>
+                <div class="result">{{ item.result }}</div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-history">No search history found.</div>
+    {% endif %}
 
-    <form method="POST" action='/register'>
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="email" name="email" placeholder="Email Address" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <button type="submit">Register</button>
-    </form>
-
-    <div class="login-link">
-        Already have an account? <a href='/login'>Login here</a>
+    <div style="text-align: center;">
+        <a href="{{ url_for('home') }}" class="button">🔙 Back to Search</a>
     </div>
 </div>
-
-</body>
-</html>
+{% endblock %}
