@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}HealthBot{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+        }
+
+        header {
+            background: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: bold;
+            color: #6b1e8b;
+        }
+
+        .logo a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .nav-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            margin-left: 10px;
+            cursor: pointer;
+
+            background-color: black;
+            color: white;
+            font-weight: bold;
+        }
+
+        .nav-buttons button:hover {
+            background-color: #333;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            background-color: white;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+
+    {% block extra_style %}{% endblock %}
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header>
+        <div class="logo">
+            <a href="{{ url_for('home') }}">HealthBot</a>
+        </div>
+
+        {% if request.endpoint == 'home' %}
+        <div class="nav-buttons">
+            {% if session.user %}
+                <span>Welcome, {{ session.user }}!</span>
+                <button onclick="window.location.href='/logout'">Logout</button>
+            {% else %}
+                <button onclick="window.location.href='/login'">Login</button>
+                <button onclick="window.location.href='/register'">Register</button>
+            {% endif %}
+        </div>
+        {% endif %}
+    </header>
+
+    <!-- Main Content Block -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer Section -->
+    <footer>
+        © 2025 HealthBot. All rights reserved.
+    </footer>
+
+</body>
+</html>
