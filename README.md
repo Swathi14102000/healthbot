@@ -14,6 +14,7 @@ Requirements
 - Flask_SQLAlchemy
 - PyMySQL
 - fuzzywuzzy
+
 after installation in your terminal to run the code python app.py
 it shows web link copy paste to run the search engine
 
