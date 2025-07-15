@@ -1,64 +1,103 @@
 {% extends 'partials/base.html' %}
 
-{% block title %}Search History - HealthBot{% endblock %}
+{% block title %}Register - HealthBot{% endblock %}
 
 {% block extra_style %}
 <style>
-    .container {
-        max-width: 800px;
-        margin: auto;
-        background: #ffffff;
+    .form-container {
+        max-width: 400px;
+        margin: 50px auto;
         padding: 30px;
+        background-color: #ffffff;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
         border-radius: 12px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
+
     h2 {
         text-align: center;
-        color: #2a5d84;
+        color: #6a1b9a;
+        margin-bottom: 20px;
     }
-    .history-item {
-        border-bottom: 1px solid #ccc;
-        padding: 15px 0;
+
+    form input[type="text"],
+    form input[type="email"],
+    form input[type="password"] {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 16px;
     }
-    .query {
-        font-weight: bold;
-        color: #333;
+
+    form button {
+        width: 100%;
+        padding: 12px;
+        background-color: #6a1b9a;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
     }
-    .timestamp {
-        font-size: 0.9em;
-        color: #777;
+
+    form button:hover {
+        background-color: #4a0e73;
     }
-    .result {
-        margin-top: 5px;
-        color: #444;
-    }
-    .no-history {
+
+    .login-link {
         text-align: center;
-        color: #999;
-        font-size: 1.1em;
-        margin-top: 50px;
+        margin-top: 15px;
+    }
+
+    .login-link a {
+        color: #6a1b9a;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .flash-message {
+        padding: 10px;
+        text-align: center;
+        margin-bottom: 15px;
+        border-radius: 5px;
+    }
+
+    .flash-message.success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .flash-message.error {
+        background-color: #f8d7da;
+        color: #721c24;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>🕓 Recent Search History</h2>
+<div class="form-container">
+    <h2>Create Account</h2>
 
-    {% if history %}
-        {% for item in history %}
-            <div class="history-item">
-                <div class="query">🔍 {{ item.query }}</div>
-                <div class="timestamp">{{ item.timestamp.strftime('%Y-%m-%d %H:%M:%S') if item.timestamp else 'N/A' }}</div>
-                <div class="result">{{ item.result }}</div>
-            </div>
-        {% endfor %}
-    {% else %}
-        <div class="no-history">No search history found.</div>
-    {% endif %}
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-    <div style="text-align: center;">
-        <a href="{{ url_for('home') }}" class="button">🔙 Back to Search</a>
+    <form method="POST">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Register</button>
+    </form>
+
+    <div class="login-link">
+        Already have an account?
+        <a href="{{ url_for('login') }}">Login here</a>
     </div>
 </div>
 {% endblock %}
