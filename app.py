@@ -15,7 +15,7 @@ app.secret_key = "your_very_secret_key"
 # Create tables
 
 models.Base.metadata.create_all(bind=engine)
-User.metadata.create_all(bind=SessionLocal.kw["bind"])
+
 
 
 def get_ip():
