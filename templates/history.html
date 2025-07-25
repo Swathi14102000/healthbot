@@ -4,61 +4,80 @@
 
 {% block extra_style %}
 <style>
-    .container {
-        max-width: 800px;
-        margin: auto;
-        background: #ffffff;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    .history-container {
+        max-width: 900px;
+        margin: 50px auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
+
     h2 {
         text-align: center;
-        color: #2a5d84;
+        color: #6a1b9a;
+        margin-bottom: 20px;
     }
+
     .history-item {
-        border-bottom: 1px solid #ccc;
+        border-bottom: 1px solid #eee;
         padding: 15px 0;
     }
+
+    .history-item:last-child {
+        border-bottom: none;
+    }
+
     .query {
         font-weight: bold;
-        color: #333;
-    }
-    .timestamp {
-        font-size: 0.9em;
-        color: #777;
-    }
-    .result {
-        margin-top: 5px;
         color: #444;
     }
-    .no-history {
+
+    .result {
+        margin: 5px 0;
+        color: #555;
+    }
+
+    .timestamp {
+        font-size: 14px;
+        color: #888;
+    }
+
+    .back-btn {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #6a1b9a;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
         text-align: center;
-        color: #999;
-        font-size: 1.1em;
-        margin-top: 50px;
+    }
+
+    .back-btn:hover {
+        background-color: #4e1373;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>🕓 Recent Search History</h2>
+<div class="history-container">
+    <h2>Search History</h2>
 
-    {% if history %}
+    {% if history and history|length > 0 %}
         {% for item in history %}
             <div class="history-item">
                 <div class="query">🔍 {{ item.query }}</div>
-                <div class="timestamp">{{ item.timestamp.strftime('%Y-%m-%d %H:%M:%S') if item.timestamp else 'N/A' }}</div>
                 <div class="result">{{ item.result }}</div>
+                <div class="timestamp">🕒 {{ item.timestamp.strftime('%d-%b-%Y %I:%M %p') }}</div>
             </div>
         {% endfor %}
     {% else %}
-        <div class="no-history">No search history found.</div>
+        <p style="text-align: center;">No search history available.</p>
     {% endif %}
 
     <div style="text-align: center;">
-        <a href="{{ url_for('home') }}" class="button">🔙 Back to Search</a>
+        <a href="{{ url_for('home') }}" class="back-btn">Return to Home</a>
     </div>
 </div>
 {% endblock %}
