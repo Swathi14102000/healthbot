@@ -51,10 +51,12 @@
         color: #111;
         text-align: center;
     }
-    h2,h3,p{
-        color:#000;
+
+    h2, h3, p {
+        color: #000;
         text-align: center;
     }
+
     .search-box {
         display: flex;
         justify-content: center;
@@ -109,22 +111,36 @@
         list-style-type: none;
     }
 
-    .home-button {
-        display: inline-block;
+    .home-button-container {
+        text-align: center;
         margin-top: 30px;
+    }
+
+    .home-button {
         padding: 10px 20px;
         background-color: #864cafc3;
         color: white;
         text-decoration: none;
-        border: none;
         border-radius: 5px;
         font-size: 16px;
         font-family: Arial, sans-serif;
-        text-align: center;
     }
 
-    .home-button-container {
+    .pagination {
         text-align: center;
+        margin-top: 20px;
+    }
+
+    .pagination a {
+        margin: 0 5px;
+        text-decoration: none;
+        color: #6a1b9a;
+        font-weight: bold;
+    }
+
+    .pagination strong {
+        margin: 0 5px;
+        color: #000;
     }
 </style>
 {% endblock %}
@@ -157,28 +173,67 @@
 
         <!-- Search Form -->
         <form method="GET" action="/search" class="search-box">
-            <input type="text" name="query" placeholder="Search for healthy recipes..." required>
+            <input type="text" name="query" value="{{ query }}" placeholder="Search for healthy recipes or health tips..." required>
             <button type="submit">Search</button>
         </form>
 
-        <!-- Search Results -->
-        {% if results is defined %}
-            <div class="results-container">
-                {% if results %}
-                    <h2>{{ results|length }} recipe(s) found:</h2>
-                    <ul>
-                        {% for recipe in results %}
-                            <li>
-                                <h3>🍽️ {{ recipe.title }}</h3>
-                                <p><strong>Ingredients:</strong> {{ recipe.ingredients }}</p>
-                                <p><strong>Instruction:</strong> {{ recipe.instruction }}</p>
-                                <p><strong>Calories:</strong> {{ recipe.calories }}</p>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p>No results found.</p>
-                {% endif %}
+        <!-- Recipe Results -->
+        {% if query %}
+    <div class="results-container">
+
+        {% if results %}
+            <h2>{{ results|length }} recipe(s) found:</h2>
+            <ul>
+                {% for recipe in results %}
+                    <li>
+                        <h3>🍽️ {{ recipe.title }}</h3>
+                        <p><strong>Ingredients:</strong> {{ recipe.ingredients }}</p>
+                        <p><strong>Instruction:</strong> {{ recipe.instruction }}</p>
+                        <p><strong>Calories:</strong> {{ recipe.calories }}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% elif health_tips %}
+            <!-- do not show no recipes -->
+        {% elif not health_tips %}
+            <p style="text-align:center; color: #666;">No recipes found.</p>
+        {% endif %}
+
+        {% if health_tips %}
+            <h2>{{ health_tips|length }} health tip(s) found:</h2>
+            <ul>
+                {% for tip in health_tips %}
+                    <li style="border: 2px solid #4caf50; border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                        <h3>🩺 {{ tip.title }}</h3>
+                <p><strong>Type:</strong> {{ tip.tip_type }}</p>  
+                <p>{{ tip.content }}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% elif results %}
+            <!-- do not show no health tips -->
+        {% elif not results %}
+            <p style="text-align:center; color: #666;">No health tips found.</p>
+        {% endif %}
+
+        {% if not results and not health_tips %}
+            <p style="text-align:center; color: #444;">No results found for your query.</p>
+        {% endif %}
+
+    </div>
+{% endif %}
+
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+            <div class="pagination">
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                        <strong>[{{ p }}]</strong>
+                    {% else %}
+                        <a href="{{ url_for('search') }}?query={{ query }}&page={{ p }}">{{ p }}</a>
+                    {% endif %}
+                {% endfor %}
             </div>
         {% endif %}
 
