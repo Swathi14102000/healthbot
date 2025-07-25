@@ -1,84 +1,78 @@
-from pydantic import BaseModel, EmailStr, validator
-import re
+from datetime import datetime
+from pydantic import BaseModel, Field, validator
+from typing import Optional
 
-# ---------- User Registration ----------
+
+# ---------- User Schemas ----------
 class UserCreate(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    email: str = Field(..., min_length=5, max_length=100)
+    password: str = Field(..., min_length=6)
+
+    @validator("username", "email", "password")
+    def not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Field cannot be empty")
+        return v
+
+
+class LoginUser(BaseModel):
     username: str
-    email: EmailStr
     password: str
 
-    @validator("username")
-    def validate_username(cls, v):
-        if not re.match(r"^[A-Za-z][a-zA-Z0-9]*$", v):
-            raise ValueError("Username must start with an alphabet and not contain special characters or spaces")
-        return v
 
-    @validator("email")
-    def validate_email(cls, v):
-        if not v:
-            raise ValueError("Please provide a valid email")
-        return v
-
-    @validator("password")
-    def validate_password(cls, v):
-        if len(v) < 8:
-            raise ValueError("Password must be at least 8 characters long")
-        return v
-
-
-# ---------- User Login ----------
-class LoginUser(BaseModel):
-    email: EmailStr
-    password: str  # Changed from `password_hash` to `password`
-
-    @validator("email")
-    def validate_email(cls, v):
-        if not v:
-            raise ValueError("Please provide a valid email")
-        return v
-
-    @validator("password")
-    def validate_password(cls, v):
-        if len(v) < 8:
-            raise ValueError("Password must be at least 8 characters long")
-        return v
-
-
-# ---------- Recipe Creation ----------
+# ---------- Recipe Schemas ----------
 class RecipeCreate(BaseModel):
     title: str
     ingredients: str
     instruction: str
-    calories: int
+    calories: Optional[str] = None  # Optional calorie info
 
     @validator("title", "ingredients", "instruction")
     def not_empty(cls, v):
-        if not v or not v.strip():
+        if not v.strip():
             raise ValueError("Field cannot be empty")
         return v
 
-    @validator("calories")
-    def calories_positive(cls, v):
-        if v <= 0:
-            raise ValueError("Calories must be a positive integer")
-        return v
 
-
-# ---------- Recipe Output ----------
 class RecipeOut(BaseModel):
     id: int
     title: str
     ingredients: str
     instruction: str
-    calories: int
+    calories: Optional[str]
+
+    class Config:
+        from_attributes = True  # Enables ORM support
+
+
+# ---------- Health Tip Schemas ----------
+class HealthTipCreate(BaseModel):
+    title: str = Field(..., min_length=3, max_length=255, description="Unique title of the health tip")
+    content: str = Field(..., min_length=10, description="Detailed health tip content")
+    tip_type: str = Field(..., max_length=100, description="Type of tip like Nutrition, Fitness, etc.")
+
+    @validator("title", "content", "tip_type")
+    def not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Field cannot be empty")
+        return v
+
+
+class HealthTipOut(BaseModel):
+    tip_id: int
+    title: str
+    content: str
+    tip_type: str
+    created_at: datetime
 
     class Config:
         from_attributes = True
 
 
-# ---------- Optional Search Schemas ----------
+# ---------- Search (Optional Use) ----------
 class SearchRequest(BaseModel):
-    query: str
+    query: str = Field(..., min_length=1)
 
 class SearchResponse(BaseModel):
     result: str
