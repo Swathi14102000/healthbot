@@ -1,0 +1,38 @@
+[
+  {
+    "title": "Diabetes - Monitor Blood Sugar",
+    "type": "Diabetes",
+    "content": "Check your blood sugar levels regularly to manage diabetes effectively.",
+    "created_at": "2025-07-25T09:00:00"
+  },
+  {
+    "title": "Diabetes - Eat Low Glycemic Foods",
+    "type": "Diabetes",
+    "content": "Consume foods like whole grains, legumes, and non-starchy vegetables to control blood sugar spikes.",
+    "created_at": "2025-07-25T09:10:00"
+  },
+  {
+    "title": "Diabetes - Stay Active",
+    "type": "Diabetes",
+    "content": "Exercise for at least 30 minutes daily to improve insulin sensitivity.",
+    "created_at": "2025-07-25T09:20:00"
+  },
+  {
+    "title": "Thyroid - Eat Iodine-Rich Foods",
+    "type": "Thyroid",
+    "content": "Include iodine-rich foods like seaweed and iodized salt to support thyroid function.",
+    "created_at": "2025-07-25T09:30:00"
+  },
+  {
+    "title": "Thyroid - Avoid Soy in Excess",
+    "type": "Thyroid",
+    "content": "Limit excessive soy intake as it may interfere with thyroid medication absorption.",
+    "created_at": "2025-07-25T09:40:00"
+  },
+  {
+    "title": "Thyroid - Regular TSH Monitoring",
+    "type": "Thyroid",
+    "content": "Get your TSH levels checked regularly to ensure proper medication dosage.",
+    "created_at": "2025-07-25T09:50:00"
+  }
+]
