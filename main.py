@@ -130,15 +130,23 @@ def search_items(query: str = "", db: Session = Depends(get_db)):
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-# Create Single Health Tip
-@app.post("/health_tips/", response_model=HealthTipOut)
-def create_health_tip(tip: HealthTipCreate, db: Session = Depends(get_db)):
+# Create Health Tip
+@app.post("/health_tips/", response_model=List[HealthTipOut])
+def create_health_tips(tips: List[HealthTipCreate], db: Session = Depends(get_db)):
+    created_tips = []
+
     try:
-        new_tip = HealthTip(**tip.dict())
-        db.add(new_tip)
+        for tip in tips:
+            new_tip = HealthTip(**tip.dict())
+            db.add(new_tip)
+            created_tips.append(new_tip)
+
         db.commit()
-        db.refresh(new_tip)
-        return new_tip
+
+        for tip in created_tips:
+            db.refresh(tip)
+
+        return created_tips
 
     except IntegrityError:
         db.rollback()
@@ -148,5 +156,6 @@ def create_health_tip(tip: HealthTipCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=503, detail="Database connection failed")
 
     except Exception as e:
+        db.rollback()
         logging.error(f"Unexpected error: {e}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred")
