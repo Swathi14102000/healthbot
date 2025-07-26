@@ -69,17 +69,15 @@
             <a href="{{ url_for('home') }}">HealthBot</a>
         </div>
 
-        {% if request.endpoint == 'home' %}
         <div class="nav-buttons">
             {% if session.user %}
                 <span>Welcome, {{ session.user }}!</span>
-                <button onclick="window.location.href='/logout'">Logout</button>
+                <button onclick="window.location.href='{{ url_for('logout') }}'">Logout</button>
             {% else %}
-                <button onclick="window.location.href='/login'">Login</button>
-                <button onclick="window.location.href='/register'">Register</button>
+                <button onclick="window.location.href='{{ url_for('login') }}'">Login</button>
+                <button onclick="window.location.href='{{ url_for('register') }}'">Register</button>
             {% endif %}
         </div>
-        {% endif %}
     </header>
 
     <!-- Main Content Block -->
