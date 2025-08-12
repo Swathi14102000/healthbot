@@ -1,19 +1,24 @@
-<<<<<<< HEAD
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import OperationalError, SQLAlchemyError
-from typing import Annotated, List
+from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
+from typing import List
 from fuzzywuzzy import fuzz
 from sqlalchemy import or_
 import hashlib
-from fastapi import Depends
+import logging
 
 import models, schemas
+from models import HealthTip
+from schemas import HealthTipCreate, HealthTipOut
 from database import engine, SessionLocal
 
+# Initialize FastAPI app and Jinja templates
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
-# Create tables
+# Create DB tables
 models.Base.metadata.create_all(bind=engine)
 
 # Dependency to get DB session
@@ -21,16 +26,12 @@ def get_db():
     try:
         db = SessionLocal()
         yield db
-    except OperationalError:
-        raise HTTPException(status_code=503, detail="Database is unavailable")
     finally:
         db.close()
 
-db_dependency = Annotated[Session, Depends(get_db)]
-
-# Register user
+# Register User
 @app.post("/register", status_code=status.HTTP_201_CREATED)
-def register_user(user: schemas.UserCreate, db: db_dependency):
+def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(models.User).filter(
         or_(models.User.username == user.username, models.User.email == user.email)
     ).first()
@@ -39,37 +40,29 @@ def register_user(user: schemas.UserCreate, db: db_dependency):
         raise HTTPException(status_code=400, detail="User with this username or email already exists")
 
     hashed_password = hashlib.sha256(user.password.encode()).hexdigest()
-
-    new_user = models.User(
-        username=user.username,
-        email=user.email,
-        password=hashed_password
-    )
-
+    new_user = models.User(username=user.username, email=user.email, password=hashed_password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
     return {"message": "Successfully registered", "user_id": new_user.id}
 
-# Login user
+# Login User
 @app.post("/login", status_code=status.HTTP_200_OK)
-def login(user: schemas.LoginUser, db: db_dependency):
+def login(user: schemas.LoginUser, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.username == user.username).first()
-
     if not db_user:
         raise HTTPException(status_code=400, detail="Username not found")
 
     hashed_input_password = hashlib.sha256(user.password.encode()).hexdigest()
-
     if db_user.password != hashed_input_password:
         raise HTTPException(status_code=400, detail="Incorrect password")
 
     return {"message": "Login successful"}
 
-# Bulk insert recipes
+# Bulk Insert Recipes
 @app.post("/recipes", status_code=status.HTTP_201_CREATED)
-def create_bulk_recipes(recipes: List[schemas.RecipeCreate], db: db_dependency):
+def create_bulk_recipes(recipes: List[schemas.RecipeCreate], db: Session = Depends(get_db)):
     if not recipes:
         raise HTTPException(status_code=400, detail="Recipe list cannot be empty")
 
@@ -91,131 +84,78 @@ def create_bulk_recipes(recipes: List[schemas.RecipeCreate], db: db_dependency):
 
     return {"message": f"{len(inserted)} recipe(s) successfully inserted"}
 
-# Search recipes using fuzzy logic
+# ✅ Combined Search: Recipes + Health Tips
 @app.get("/search", status_code=status.HTTP_200_OK)
-def search_recipe(query: str = "", db: db_dependency = Depends() ):
+def search_items(query: str = "", db: Session = Depends(get_db)):
     if not query.strip():
         raise HTTPException(status_code=400, detail="Search query cannot be empty")
 
     try:
-        all_recipes = db.query(models.Recipe).all()
-        matched = []
-
-        for recipe in all_recipes:
+        # 🔍 1. Search Recipes
+        recipes = db.query(models.Recipe).all()
+        matched_recipes = []
+        for recipe in recipes:
             score = fuzz.partial_ratio(query.lower(), recipe.title.lower())
             if score >= 60:
-                matched.append({
+                matched_recipes.append({
                     "id": recipe.id,
-                    "title": recipe.title.title(),
+                    "title": recipe.title,
                     "ingredients": recipe.ingredients,
                     "instruction": recipe.instruction,
                     "calories": recipe.calories
                 })
 
+        # 🔍 2. Search Health Tips
+        tips = db.query(models.HealthTip).all()
+        matched_tips = []
+        for tip in tips:
+            score = fuzz.partial_ratio(query.lower(), tip.title.lower())
+            if score >= 60:
+                matched_tips.append({
+                    "tip_id": tip.tip_id,
+                    "title": tip.title,
+                    "content": tip.content,
+                    "tip_type": tip.tip_type,
+                    "created_at": tip.created_at
+                })
+
         return {
-            "count": len(matched),
-            "results": matched
+            "query": query,
+            "recipes_count": len(matched_recipes),
+            "health_tips_count": len(matched_tips),
+            "recipes": matched_recipes,
+            "health_tips": matched_tips
         }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-=======
-from fastapi import FastAPI, HTTPException, Depends, status # Import necessary modules from FastAPI and SQLAlchemy
-from sqlalchemy.orm import Session  # SQLAlchemy session for DB operations
-from sqlalchemy.exc import OperationalError, SQLAlchemyError #Specific exception for DB sessions
-import models, schemas # own model  and schema for python files
-from database import engine, SessionLocal # DB engine and session factory from your database setup
-from typing import Annotated #For type-safe dependency injection 
-import hashlib #  used for hashing passwords securely 
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-app = FastAPI() # create FatAPI app instance
+# Create Health Tip
+@app.post("/health_tips/", response_model=List[HealthTipOut])
+def create_health_tips(tips: List[HealthTipCreate], db: Session = Depends(get_db)):
+    created_tips = []
 
-# Automatically Create all tables
-models.Base.metadata.create_all(bind=engine)
-
-# Dependency function to get a DB session and DB down handling issues
-def get_db(): 
     try:
-        db = SessionLocal()  # create a new db session
-        yield db              #  Yield the session to the path operation
-    except OperationalError:   # Catch database connection errors
-        raise HTTPException(
-            status_code=503,
-            detail="Database is currently unavailable. Please try again later."
-        )
-    finally:
-        try:
-            db.close()    # Ensure the session is closed even if an error occurs
-        except:
-            pass  # Ignore errors during session close (e.g., if db was never opened)
+        for tip in tips:
+            new_tip = HealthTip(**tip.dict())
+            db.add(new_tip)
+            created_tips.append(new_tip)
 
-
-# Annotated DB dependency
-db_dependency = Annotated[Session, Depends(get_db)]
-
-#  API : user Registeration
-@app.post("/register", status_code=status.HTTP_201_CREATED) 
-def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)): 
-    try:   #check the username aldready exist or not
-        if db.query(models.User).filter(models.User.username == user.username).first(): #check the username aldready exist or not
-            raise HTTPException(status_code=400, detail="Username already exists")
-        
-           # Check if the email is already registered
-        if db.query(models.User).filter(models.User.email == user.email).first():
-            raise HTTPException(status_code=400, detail="Email is already registered")
-
-        new_user = models.User(        # Create a new User model
-            username=user.username,
-            email=user.email,
-            password_hash=user.password_hash # Make sure this is hashed before reaching this point
-        )
-        db.add(new_user) # Add and commit the new user to the DB
         db.commit()
-        db.refresh(new_user) # Refresh instance to get generated fields (like ID)
-        return {"message": "Successfully registered", "user_id": new_user.id} 
-    
-    except SQLAlchemyError as e:    # Catch any general SQLAlchemy DB error
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-#  API user Login
-@app.post("/login", status_code=status.HTTP_201_CREATED)  
-def login(user: schemas.LoginUser, db: Session = Depends(get_db)):
-    try:        # Look up the user by username
-        db_user = db.query(models.User).filter(models.User.username == user.username).first()
-        if not db_user:
-            raise HTTPException(status_code=400, detail="Username not found")
-        # Hash the entered password for secure comparison
-        hashed_input_password = hashlib.sha256(user.password.encode()).hexdigest()
-        if db_user.password_hash != hashed_input_password:
-            raise HTTPException(status_code=400, detail="Incorrect password")
+        for tip in created_tips:
+            db.refresh(tip)
 
-        return {"message": "Login successful!"} 
-    
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        return created_tips
 
-# API : Create a user (Admin or extended API)
-@app.post("/createuser/", status_code=status.HTTP_201_CREATED)
-async def create_user(user: schemas.UserCreate, db: db_dependency):
-    try:    # Create a new User instance using dict unpacking
-        db_user = models.User(**user.dict())
-        db.add(db_user)   # Add to DB session
-        db.commit()       # Commit to save
-        db.refresh(db_user) # Refresh to get ID or default values
-        return {"message": "User created", "user_id": db_user.id}
-    
-    except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Tip title must be unique")
 
-# API: Get a user by ID
-@app.get("/getuser/{user_id}", status_code=status.HTTP_200_OK)
-async def read_user(user_id: int, db: db_dependency):
-    try:    # Look for the user with the given ID
-        user = db.query(models.User).filter(models.User.id == user_id).first()
-        if user is None: # If user doesn't exist, return 404 error
-            raise HTTPException(status_code=404, detail='User not found')
-        return user
-    
-    except SQLAlchemyError as e:   # Return user object directly (FastAPI will serialize it)
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
->>>>>>> 113283a (add python file)
+    except OperationalError:
+        raise HTTPException(status_code=503, detail="Database connection failed")
+
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred")
