@@ -1,4 +1,5 @@
 HealthBot
+
 A powerful web application that allows users to search for recipes and health tips with keyword and fuzzy matching, user authentication, and caching for lightning-fast results.
 Supports both Flask (frontend + search) and FastAPI (backend APIs).
 
