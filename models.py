@@ -1,42 +1,25 @@
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-
-# Import declarative_base to create the base class for SQLAlchemy models
-from sqlalchemy.ext.declarative import declarative_base
-from database import engine, SessionLocal 
-# Create a base class which all models will inherit from
-Base = declarative_base()
-# Import SQLAlchemy column types and base class
-from sqlalchemy import Column, Integer, String, Text
-
-# Import the shared Base class from your database module
-from database import Base
-=======
-from sqlalchemy import Column, Integer, String, Boolean, Date, DateTime, ForeignKey, Text
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import Column, Integer, String, Boolean, Date, DateTime, ForeignKey, Text, TIMESTAMP
+from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
+from database import Base  # Base should be from your `database.py`
 
-# Import the shared Base class from your database module
-from database import Base
+# ---------- User Model ----------
+class User(Base):
+    __tablename__ = 'users'
 
-Base = declarative_base()
->>>>>>> Stashed changes
-class User(Base):  # Inherit from SQLAlchemy Base class
-    __tablename__ = 'users'  # This defines the table name in the database
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True)
+    username = Column(String(50), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
-<<<<<<< Updated upstream
-    password_hash = Column(String(255))
-=======
-    password = Column(String(255))
+    password = Column(String(255), nullable=False)
     is_registered = Column(Boolean, default=True)
     search_count = Column(Integer, default=0)
-    last_search_date = Column(Date)
-    
+    last_search_date = Column(Date, nullable=True)
+
+    # Relationship to SearchHistory
     searches = relationship('SearchHistory', back_populates='user')
 
 
+# ---------- Recipe Model ----------
 class Recipe(Base):
     __tablename__ = "recipes"
 
@@ -44,30 +27,28 @@ class Recipe(Base):
     title = Column(String(200), nullable=False)
     ingredients = Column(Text, nullable=False)
     instruction = Column(Text, nullable=False)
-    calories = Column(String(50), nullable=True) 
+    calories = Column(String(50), nullable=True)
 
+
+# ---------- Search History Model ----------
 class SearchHistory(Base):
     __tablename__ = 'search_history'
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     query = Column(String(255), nullable=False)
-    result = Column(String(255))
-    all_recipes = Column(Text)
     timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
+    # Back-reference to User
     user = relationship('User', back_populates='searches')
->>>>>>> Stashed changes
-=======
-from sqlalchemy import create_engine # Used to create a connection to the database
-from sqlalchemy.orm import sessionmaker, declarative_base  # sessionmaker: for DB sessions, declarative_base: for model base class
-# Define the database URL in SQLAlchemy format
-# Format: dialect+driver://username:password@host:port/database_name
-URL_DATABASE = 'mysql+pymysql://root:root@localhost:3306/chatbot'
-# Create a SQLAlchemy engine instance that knows how to connect to your DB
-engine = create_engine(URL_DATABASE)
-# Create a session factory that will be used to create DB sessions
-SessionLocal = sessionmaker(autocommit=False, autoflush=False,bind=engine)
-# Create a base class for your models (tables) to inherit from
-Base = declarative_base()
->>>>>>> 113283a (add python file)
+
+
+# ---------- Health Tip Model ----------
+class HealthTip(Base):
+    __tablename__ = 'health_tips'
+
+    tip_id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), unique=True, nullable=False)
+    content = Column(Text, nullable=False)
+    tip_type = Column(String(100), nullable=False)
+    created_at = Column(TIMESTAMP, default=datetime.utcnow)
