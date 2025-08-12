@@ -12,11 +12,17 @@ Supports both Flask (frontend + search) and FastAPI (backend APIs).
 🎨 Beautiful UI with sidebar history display
 
 🛠 Requirements
+
 -Flask
+
 -FastAPI
+
 -python-Levenshtein
+
 -Flask_SQLAlchemy
+
 -PyMySQL
+
 -fuzzywuzzy
 
 📦 Installation
@@ -54,18 +60,27 @@ Access via: http://127.0.0.1:5000
 🖥 Tech Stack
 
 -Python 3.10+
+
 -Flask
+
 -FastAPI
+
 -SQLAlchemy (ORM)
+
 -MySQL (or SQLite for development)
+
 -HTML/CSS
+
 -Jinja2 Templates
+
 -FuzzyWuzzy (fuzzy search)
 
 📌 Notes
 
 -Make sure MySQL server is running before starting the app.
+
 -You can change database credentials in the configuration file.
+
 -Guest users have a daily search limit.
 
 
